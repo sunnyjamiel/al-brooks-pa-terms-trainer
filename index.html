@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Master Al Brooks' 607 price action trading abbreviations through interactive category sorting">
+<title>Brooks Term Sort</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { background: #0a0e1a; color: #f1f5f9; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; overflow-x: hidden; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  input { font-family: inherit; }
+  button { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const GROUPS = {
+  1: {
+    name: "Core Basics",
+    categories: ["Price Parts", "Market Sides", "Bar Types", "Basics"],
+    terms: [
+      { abbr: "O", meaning: "Open \u2014 where the bar started", category: "Price Parts" },
+      { abbr: "C", meaning: "Close \u2014 where the bar ended", category: "Price Parts" },
+      { abbr: "H", meaning: "High \u2014 highest price reached", category: "Price Parts" },
+      { abbr: "L", meaning: "Low \u2014 lowest price reached", category: "Price Parts" },
+      { abbr: "BL", meaning: "Bull \u2014 buyers", category: "Market Sides" },
+      { abbr: "BR", meaning: "Bear \u2014 sellers", category: "Market Sides" },
+      { abbr: "PA", meaning: "Price Action \u2014 reading raw price movement", category: "Market Sides" },
+      { abbr: "ES", meaning: "Emini S&P 500 futures", category: "Market Sides" },
+      { abbr: "TB", meaning: "Trend Bar \u2014 big body, strong conviction", category: "Bar Types" },
+      { abbr: "TBS", meaning: "Trend Bars \u2014 multiple strong bars", category: "Bar Types" },
+      { abbr: "DD", meaning: "Doji \u2014 small body, nobody won", category: "Bar Types" },
+      { abbr: "DDD", meaning: "Doji Day", category: "Bar Types" },
+      { abbr: "BLD", meaning: "Bull Doji", category: "Basics" },
+      { abbr: "BRD", meaning: "Bear Doji", category: "Basics" },
+      { abbr: "F", meaning: "Fail or Failure", category: "Basics" },
+      { abbr: "CT", meaning: "Countertrend \u2014 against the current trend", category: "Basics" },
+      { abbr: "VOL", meaning: "Volume", category: "Basics" },
+    ],
+  },
+  2: {
+    name: "Price Levels \u2014 Highs & Lows",
+    categories: ["Day Levels", "Yesterday", "Week/Month", "Bar Close Position"],
+    terms: [
+      { abbr: "HD", meaning: "High of Day", category: "Day Levels" },
+      { abbr: "LD", meaning: "Low of Day", category: "Day Levels" },
+      { abbr: "HOD", meaning: "High of the Day", category: "Day Levels" },
+      { abbr: "LOD", meaning: "Low of the Day", category: "Day Levels" },
+      { abbr: "HOT", meaning: "High of Today so far", category: "Day Levels" },
+      { abbr: "LOT", meaning: "Low of Today", category: "Day Levels" },
+      { abbr: "Y", meaning: "Yesterday", category: "Yesterday" },
+      { abbr: "HOY", meaning: "High of Yesterday", category: "Yesterday" },
+      { abbr: "LOY", meaning: "Low of Yesterday", category: "Yesterday" },
+      { abbr: "COY", meaning: "Close of Yesterday", category: "Yesterday" },
+      { abbr: "OY", meaning: "Open of Yesterday", category: "Yesterday" },
+      { abbr: "HY", meaning: "High of Yesterday", category: "Yesterday" },
+      { abbr: "LY", meaning: "Low of Yesterday", category: "Yesterday" },
+      { abbr: "CY", meaning: "Close of Yesterday", category: "Yesterday" },
+      { abbr: "HOW", meaning: "High of Week", category: "Week/Month" },
+      { abbr: "HW", meaning: "High of Week", category: "Week/Month" },
+      { abbr: "LW", meaning: "Low of Week", category: "Week/Month" },
+      { abbr: "OW", meaning: "Open of Week", category: "Week/Month" },
+      { abbr: "CW", meaning: "Close of Week", category: "Week/Month" },
+      { abbr: "HLM", meaning: "High of Last Month", category: "Week/Month" },
+      { abbr: "LLM", meaning: "Low of Last Month", category: "Week/Month" },
+      { abbr: "CLM", meaning: "Close of Last Month", category: "Week/Month" },
+      { abbr: "HLW", meaning: "High of Last Week", category: "Week/Month" },
+      { abbr: "LLW", meaning: "Low of Last Week", category: "Week/Month" },
+      { abbr: "CLW", meaning: "Close of Last Week", category: "Week/Month" },
+      { abbr: "CLY", meaning: "Close of Last Year", category: "Week/Month" },
+      { abbr: "CNH", meaning: "Close Near High of bar", category: "Bar Close Position" },
+      { abbr: "CNL", meaning: "Close Near Low of bar", category: "Bar Close Position" },
+      { abbr: "COH", meaning: "Close On or near High", category: "Bar Close Position" },
+      { abbr: "COL", meaning: "Close On or near Low", category: "Bar Close Position" },
+      { abbr: "CAM", meaning: "Close Above Midpoint", category: "Bar Close Position" },
+      { abbr: "CBM", meaning: "Close Below Midpoint", category: "Bar Close Position" },
+    ],
+  },
+  3: {
+    name: "Price Structure",
+    categories: ["Higher/Lower", "Major Swings", "Key Levels", "Support/Resistance"],
+    terms: [
+      { abbr: "HH", meaning: "Higher High", category: "Higher/Lower" },
+      { abbr: "HL", meaning: "Higher Low", category: "Higher/Lower" },
+      { abbr: "LH", meaning: "Lower High", category: "Higher/Lower" },
+      { abbr: "LL", meaning: "Lower Low", category: "Higher/Lower" },
+      { abbr: "HHS", meaning: "Higher Highs", category: "Higher/Lower" },
+      { abbr: "HLS", meaning: "Higher Lows", category: "Higher/Lower" },
+      { abbr: "LHS", meaning: "Lower Highs", category: "Higher/Lower" },
+      { abbr: "LLS", meaning: "Lower Lows", category: "Higher/Lower" },
+      { abbr: "MHH", meaning: "Major Higher High", category: "Major Swings" },
+      { abbr: "MHL", meaning: "Major Higher Low", category: "Major Swings" },
+      { abbr: "MLH", meaning: "Major Lower High", category: "Major Swings" },
+      { abbr: "MLL", meaning: "Major Lower Low", category: "Major Swings" },
+      { abbr: "SH", meaning: "Swing High", category: "Major Swings" },
+      { abbr: "SL", meaning: "Swing Low", category: "Major Swings" },
+      { abbr: "ATH", meaning: "All Time High", category: "Key Levels" },
+      { abbr: "MP", meaning: "Midpoint", category: "Key Levels" },
+      { abbr: "MPD", meaning: "Midpoint of day's range", category: "Key Levels" },
+      { abbr: "MPW", meaning: "Midpoint of week's range", category: "Key Levels" },
+      { abbr: "RN", meaning: "Round Number like 2110, 2120", category: "Key Levels" },
+      { abbr: "SR", meaning: "Support and/or Resistance", category: "Support/Resistance" },
+      { abbr: "RS", meaning: "Resistance", category: "Support/Resistance" },
+      { abbr: "RSZ", meaning: "Resistance Zone", category: "Support/Resistance" },
+      { abbr: "SPZ", meaning: "Support Zone", category: "Support/Resistance" },
+      { abbr: "HR", meaning: "Higher", category: "Support/Resistance" },
+      { abbr: "LR", meaning: "Lower", category: "Support/Resistance" },
+    ],
+  },
+  4: {
+    name: "Always In",
+    categories: ["Core AI", "Bull AI", "Bear AI", "Trader Types"],
+    terms: [
+      { abbr: "AI", meaning: "Always In \u2014 forced direction", category: "Core AI" },
+      { abbr: "AIL", meaning: "Always In Long", category: "Core AI" },
+      { abbr: "AIS", meaning: "Always In Short", category: "Core AI" },
+      { abbr: "AIBL", meaning: "Always In long Bulls", category: "Bull AI" },
+      { abbr: "AIBLB", meaning: "AI Bulls Buy again above bull bar near high", category: "Bull AI" },
+      { abbr: "AIBLE", meaning: "AI Bulls can Exit below bear bar, buy again later", category: "Bull AI" },
+      { abbr: "AIBR", meaning: "Always In short Bears", category: "Bear AI" },
+      { abbr: "AIBRE", meaning: "AI Bears can Exit above bull bar, sell again later", category: "Bear AI" },
+      { abbr: "AIBRS", meaning: "AI Bears Sell again below bear bar near low", category: "Bear AI" },
+      { abbr: "AIA", meaning: "AI Aggressive \u2014 takes every reversal, ~10/day", category: "Trader Types" },
+      { abbr: "AIC", meaning: "AI Conservative \u2014 only strongest reversals, 2-5/day", category: "Trader Types" },
+    ],
+  },
+  5: {
+    name: "Entries & Signals",
+    categories: ["Signal Bars", "Entry Bars", "Second/Third Entries", "Reversal Bars"],
+    terms: [
+      { abbr: "SB", meaning: "Signal Bar \u2014 warns trade coming", category: "Signal Bars" },
+      { abbr: "BSB", meaning: "Buy Signal Bar", category: "Signal Bars" },
+      { abbr: "SSB", meaning: "Sell Signal Bar", category: "Signal Bars" },
+      { abbr: "BBSB", meaning: "Bad Buy Signal Bar", category: "Signal Bars" },
+      { abbr: "BSSB", meaning: "Bad Sell Signal Bar", category: "Signal Bars" },
+      { abbr: "EB", meaning: "Entry Bar \u2014 where you enter", category: "Entry Bars" },
+      { abbr: "EBS", meaning: "Entry Bars", category: "Entry Bars" },
+      { abbr: "BS", meaning: "Buy Signal", category: "Entry Bars" },
+      { abbr: "SS", meaning: "Sell Signal", category: "Entry Bars" },
+      { abbr: "2E", meaning: "Second Entry", category: "Second/Third Entries" },
+      { abbr: "2EB", meaning: "Second buy signal or strong enough to Buy", category: "Second/Third Entries" },
+      { abbr: "2ES", meaning: "Second sell signal or strong enough to Sell", category: "Second/Third Entries" },
+      { abbr: "3EB", meaning: "Third Entry Buy", category: "Second/Third Entries" },
+      { abbr: "3ES", meaning: "Third Entry Sell", category: "Second/Third Entries" },
+      { abbr: "G2", meaning: "A second entry on a gap setup", category: "Second/Third Entries" },
+      { abbr: "RB", meaning: "Reversal Bar", category: "Reversal Bars" },
+      { abbr: "RBS", meaning: "Reversal Bars", category: "Reversal Bars" },
+      { abbr: "2BR", meaning: "Two Bar Reversal", category: "Reversal Bars" },
+      { abbr: "2S", meaning: "Second Signal", category: "Reversal Bars" },
+    ],
+  },
+  6: {
+    name: "Legs & Bar Counting",
+    categories: ["Bull Counting", "Bear Counting", "Multiple Legs", "Key Rules"],
+    terms: [
+      { abbr: "H1", meaning: "High 1 \u2014 first pullback in bull move", category: "Bull Counting" },
+      { abbr: "H2", meaning: "High 2 \u2014 second pullback, classic buy", category: "Bull Counting" },
+      { abbr: "H3", meaning: "High 3 \u2014 third pullback, wedge bull flag", category: "Bull Counting" },
+      { abbr: "H4", meaning: "High 4 \u2014 four-legged bear channel", category: "Bull Counting" },
+      { abbr: "1LU", meaning: "First Leg Up", category: "Bull Counting" },
+      { abbr: "L1", meaning: "Low 1 \u2014 first pullback in bear move", category: "Bear Counting" },
+      { abbr: "L2", meaning: "Low 2 \u2014 second pullback, classic sell", category: "Bear Counting" },
+      { abbr: "L3", meaning: "Low 3 \u2014 third pullback, wedge bear flag", category: "Bear Counting" },
+      { abbr: "L4", meaning: "Low 4 \u2014 four-legged bull channel", category: "Bear Counting" },
+      { abbr: "1LD", meaning: "First Leg Down", category: "Bear Counting" },
+      { abbr: "2LU", meaning: "Two Legs Up", category: "Multiple Legs" },
+      { abbr: "2LD", meaning: "Two Legs Down", category: "Multiple Legs" },
+      { abbr: "2LS", meaning: "2nd leg sideways", category: "Multiple Legs" },
+      { abbr: "2LSD", meaning: "Two Legs Sideways or Down", category: "Multiple Legs" },
+      { abbr: "2LSU", meaning: "Two Legs Sideways or Up", category: "Multiple Legs" },
+      { abbr: "3LU", meaning: "Third Leg Up \u2014 possible wedge top", category: "Multiple Legs" },
+      { abbr: "3LD", meaning: "Third Leg Down \u2014 possible wedge bottom", category: "Multiple Legs" },
+      { abbr: "TBTL", meaning: "Ten Bars Two Legs \u2014 minimum for reversal", category: "Key Rules" },
+      { abbr: "A1D", meaning: "At least One more small leg Down", category: "Key Rules" },
+      { abbr: "A1U", meaning: "At least One more small leg Up", category: "Key Rules" },
+      { abbr: "1MLD", meaning: "Strong enough for at least One More Leg Down", category: "Key Rules" },
+      { abbr: "1MLU", meaning: "Strong enough for at least One More Leg Up", category: "Key Rules" },
+      { abbr: "4D", meaning: "Four consecutive bear bars \u2014 too strong for long", category: "Key Rules" },
+      { abbr: "4U", meaning: "Four consecutive bull bars \u2014 too strong for short", category: "Key Rules" },
+    ],
+  },
+  7: {
+    name: "Pullbacks",
+    categories: ["Basic Pullbacks", "Endless Pullbacks", "Better Entry Tips"],
+    terms: [
+      { abbr: "PB", meaning: "Pullback \u2014 temporary move against trend", category: "Basic Pullbacks" },
+      { abbr: "1P", meaning: "First Pause or Pullback in strong trend", category: "Basic Pullbacks" },
+      { abbr: "50P", meaning: "50% Pullback", category: "Basic Pullbacks" },
+      { abbr: "A2", meaning: "Two-legged Pullback to EMA in trend", category: "Basic Pullbacks" },
+      { abbr: "A22", meaning: "Second entry in two-legged PB to EMA", category: "Basic Pullbacks" },
+      { abbr: "EP", meaning: "Endless Pullback", category: "Endless Pullbacks" },
+      { abbr: "EPB", meaning: "Endless PullBack", category: "Endless Pullbacks" },
+      { abbr: "EPBD", meaning: "Endless Pullback Down in bull trend", category: "Endless Pullbacks" },
+      { abbr: "EPBU", meaning: "Endless Pullback Up in bear trend", category: "Endless Pullbacks" },
+      { abbr: "BBP", meaning: "Better to Buy Pullback than buy at high", category: "Better Entry Tips" },
+      { abbr: "BSP", meaning: "Better to Sell Pullback", category: "Better Entry Tips" },
+    ],
+  },
+  8: {
+    name: "Breakouts",
+    categories: ["Core Breakout", "Breakout Points", "Breakout Pullbacks", "Failed/Minor"],
+    terms: [
+      { abbr: "BO", meaning: "Breakout \u2014 close beyond support/resistance", category: "Core Breakout" },
+      { abbr: "BOA", meaning: "Breakout Above resistance", category: "Core Breakout" },
+      { abbr: "BOB", meaning: "Breakout Below support", category: "Core Breakout" },
+      { abbr: "BOF", meaning: "Strong Breakout with good Follow-through", category: "Core Breakout" },
+      { abbr: "BOUD", meaning: "Breakout Up or Down", category: "Core Breakout" },
+      { abbr: "BOP", meaning: "Break Out Point", category: "Breakout Points" },
+      { abbr: "BOPBL", meaning: "Breakout Point for current rally", category: "Breakout Points" },
+      { abbr: "BOPBR", meaning: "Breakout Point for current selloff", category: "Breakout Points" },
+      { abbr: "BOT", meaning: "Breakout Test", category: "Breakout Points" },
+      { abbr: "BT", meaning: "Breakout Test", category: "Breakout Points" },
+      { abbr: "BP", meaning: "Breakout Pullback", category: "Breakout Pullbacks" },
+      { abbr: "BPS", meaning: "Breakout Pullbacks", category: "Breakout Pullbacks" },
+      { abbr: "BWB", meaning: "Better Wait for a Breakout", category: "Breakout Pullbacks" },
+      { abbr: "FBO", meaning: "Failed Breakout \u2014 reverses back", category: "Failed/Minor" },
+      { abbr: "BOM", meaning: "Breakout Mode \u2014 50/50 direction", category: "Failed/Minor" },
+      { abbr: "MBO", meaning: "Minor Breakout \u2014 probably a scalp", category: "Failed/Minor" },
+      { abbr: "MBOD", meaning: "Minor Breakout Down", category: "Failed/Minor" },
+      { abbr: "MBOU", meaning: "Minor Breakout Up", category: "Failed/Minor" },
+      { abbr: "BLBO", meaning: "Bull Breakout", category: "Failed/Minor" },
+      { abbr: "BLBOM", meaning: "Bull breakout but probably minor", category: "Failed/Minor" },
+      { abbr: "BRBO", meaning: "Bear Breakout", category: "Failed/Minor" },
+      { abbr: "BRBOM", meaning: "Bear breakout but probably minor", category: "Failed/Minor" },
+    ],
+  },
+  9: {
+    name: "Follow-Through & Momentum",
+    categories: ["Follow-Through", "Strong Moves", "Surprises"],
+    terms: [
+      { abbr: "FT", meaning: "Follow Through \u2014 next bar confirms?", category: "Follow-Through" },
+      { abbr: "FTD", meaning: "Follow-Through Down", category: "Follow-Through" },
+      { abbr: "FTU", meaning: "Follow-Through Up", category: "Follow-Through" },
+      { abbr: "BFT", meaning: "Bad Follow-through", category: "Follow-Through" },
+      { abbr: "DFT", meaning: "Disappointing Follow-through \u2014 TR likely", category: "Follow-Through" },
+      { abbr: "BFD", meaning: "Strong Bear Breakout + FT so more Down", category: "Strong Moves" },
+      { abbr: "BFU", meaning: "Strong Bull Breakout + FT so more Up", category: "Strong Moves" },
+      { abbr: "SP", meaning: "Spike \u2014 strong fast move", category: "Strong Moves" },
+      { abbr: "MO", meaning: "Momentum", category: "Strong Moves" },
+      { abbr: "MBLS", meaning: "Major Bull Surprise \u2014 prevents bear trend", category: "Surprises" },
+      { abbr: "MBRS", meaning: "Major Bear Surprise \u2014 prevents bull trend", category: "Surprises" },
+      { abbr: "DFU", meaning: "Dominant Feature Up \u2014 Major Bull Surprise", category: "Surprises" },
+      { abbr: "DFD", meaning: "Dominant Feature Down \u2014 Major Bear Surprise", category: "Surprises" },
+    ],
+  },
+  10: {
+    name: "Trends & Day Types",
+    categories: ["Trend Types", "Bull Days", "Bear Days", "Resumption/Reversal"],
+    terms: [
+      { abbr: "BLT", meaning: "Bull Trend", category: "Trend Types" },
+      { abbr: "BRT", meaning: "Bear Trend", category: "Trend Types" },
+      { abbr: "TD", meaning: "Trend Day", category: "Trend Types" },
+      { abbr: "T1B", meaning: "Trend from the first bar", category: "Trend Types" },
+      { abbr: "BLTD", meaning: "Bull Trend Day", category: "Bull Days" },
+      { abbr: "BBLTD", meaning: "Big Bull Trend Day", category: "Bull Days" },
+      { abbr: "BLRVD", meaning: "Bull Reversal Day", category: "Bull Days" },
+      { abbr: "BRTD", meaning: "Bear Trend Day", category: "Bear Days" },
+      { abbr: "BBRTD", meaning: "Big Bear Trend Day", category: "Bear Days" },
+      { abbr: "RD", meaning: "Reversal Day", category: "Bear Days" },
+      { abbr: "TRE", meaning: "Trend Resumption", category: "Resumption/Reversal" },
+      { abbr: "TRESD", meaning: "Trend Resumption Down", category: "Resumption/Reversal" },
+      { abbr: "TRESU", meaning: "Trend Resumption Up", category: "Resumption/Reversal" },
+      { abbr: "TREV", meaning: "Trend Reversal", category: "Resumption/Reversal" },
+      { abbr: "TREVD", meaning: "Trend Reversal Down", category: "Resumption/Reversal" },
+      { abbr: "TREVU", meaning: "Trend Reversal Up", category: "Resumption/Reversal" },
+      { abbr: "TTRD", meaning: "Trending Trading Range Day", category: "Resumption/Reversal" },
+    ],
+  },
+  11: {
+    name: "Trading Ranges",
+    categories: ["Range Types", "Range Behavior", "Range Structure", "Range Context"],
+    terms: [
+      { abbr: "TR", meaning: "Trading Range", category: "Range Types" },
+      { abbr: "TTR", meaning: "Tight Trading Range", category: "Range Types" },
+      { abbr: "TRS", meaning: "Trading Ranges", category: "Range Types" },
+      { abbr: "VTTR", meaning: "Very Tight Trading Range", category: "Range Types" },
+      { abbr: "TRD", meaning: "Trading Range Day", category: "Range Types" },
+      { abbr: "DTR", meaning: "Day Trading Range", category: "Range Types" },
+      { abbr: "DTTR", meaning: "Day tight trading range", category: "Range Types" },
+      { abbr: "TST", meaning: "Two-Sided Trading", category: "Range Behavior" },
+      { abbr: "NMI", meaning: "Need More Information \u2014 wait", category: "Range Behavior" },
+      { abbr: "CMB", meaning: "Confusion \u2014 both buy and sell reasons", category: "Range Behavior" },
+      { abbr: "LOPTM", meaning: "Lots of Overlap and Tails \u2014 only minor reversal", category: "Range Behavior" },
+      { abbr: "BDBU", meaning: "Big Down Big Up \u2014 confusion, TR likely", category: "Range Behavior" },
+      { abbr: "BW", meaning: "Barb Wire \u2014 overlapping bars, avoid", category: "Range Behavior" },
+      { abbr: "TRL", meaning: "Trading Range Likely", category: "Range Structure" },
+      { abbr: "TRO", meaning: "Trading Range Open", category: "Range Structure" },
+      { abbr: "TRPA", meaning: "Trading Range Price Action", category: "Range Structure" },
+      { abbr: "LRTR", meaning: "Lower TR in Trending TR Day", category: "Range Structure" },
+      { abbr: "HRTR", meaning: "Higher TR in Trending TR Day", category: "Range Structure" },
+      { abbr: "LTR", meaning: "Lower Trading Range", category: "Range Structure" },
+      { abbr: "MRD", meaning: "Minor Reversal Down \u2014 bull PB, not real reversal", category: "Range Context" },
+      { abbr: "MRU", meaning: "Minor Reversal Up \u2014 bear PB, not real reversal", category: "Range Context" },
+      { abbr: "BLTR", meaning: "Probably Bull leg in TR, not bull trend", category: "Range Context" },
+      { abbr: "BRTR", meaning: "Probably Bear leg in TR, not bear trend", category: "Range Context" },
+      { abbr: "BBLT", meaning: "Big Bull bar but top of TTR \u2014 lower probability", category: "Range Context" },
+      { abbr: "BBRT", meaning: "Big Bear bar but bottom of TTR \u2014 lower probability", category: "Range Context" },
+      { abbr: "LOO", meaning: "Limit Order Open \u2014 early TR likely", category: "Range Context" },
+    ],
+  },
+  12: {
+    name: "Inside & Outside Bars",
+    categories: ["Inside Bars", "Consecutive Inside", "Outside Bars", "Day-Level"],
+    terms: [
+      { abbr: "IB", meaning: "Inside Bar", category: "Inside Bars" },
+      { abbr: "IBD", meaning: "Inside bar on daily", category: "Inside Bars" },
+      { abbr: "IBW", meaning: "Inside bar on weekly", category: "Inside Bars" },
+      { abbr: "ID", meaning: "Inside Day", category: "Inside Bars" },
+      { abbr: "ii", meaning: "Two consecutive inside bars \u2014 Breakout Mode", category: "Consecutive Inside" },
+      { abbr: "iii", meaning: "Three inside bars \u2014 Breakout Mode", category: "Consecutive Inside" },
+      { abbr: "iiii", meaning: "Four inside bars \u2014 Breakout Mode", category: "Consecutive Inside" },
+      { abbr: "OB", meaning: "Outside Bar \u2014 goes beyond both ways", category: "Outside Bars" },
+      { abbr: "OD", meaning: "Outside down bar", category: "Outside Bars" },
+      { abbr: "OU", meaning: "Outside up bar", category: "Outside Bars" },
+      { abbr: "OO", meaning: "Consecutive outside bars \u2014 Breakout Mode", category: "Outside Bars" },
+      { abbr: "ioi", meaning: "Outside bar surrounded by Inside bars", category: "Outside Bars" },
+      { abbr: "ODD", meaning: "Outside Down Day", category: "Day-Level" },
+      { abbr: "OUD", meaning: "Outside Up Day", category: "Day-Level" },
+      { abbr: "ODW", meaning: "Outside Down Week", category: "Day-Level" },
+      { abbr: "OUW", meaning: "Outside Up Week", category: "Day-Level" },
+      { abbr: "AODD", meaning: "Almost Outside Down Day", category: "Day-Level" },
+      { abbr: "AOUD", meaning: "Almost Outside Up Day", category: "Day-Level" },
+    ],
+  },
+  13: {
+    name: "Channels",
+    categories: ["Channel Types", "Bull Channels", "Bear Channels", "Channel Lines"],
+    terms: [
+      { abbr: "CH", meaning: "Channel \u2014 slow steady trend", category: "Channel Types" },
+      { abbr: "BC", meaning: "Broad Channel", category: "Channel Types" },
+      { abbr: "TC", meaning: "Tight Channel", category: "Channel Types" },
+      { abbr: "MC", meaning: "Microchannel", category: "Channel Types" },
+      { abbr: "MCH", meaning: "MicroChannel", category: "Channel Types" },
+      { abbr: "BLC", meaning: "Bull Channel", category: "Bull Channels" },
+      { abbr: "BLCH", meaning: "Bull Channel", category: "Bull Channels" },
+      { abbr: "BBLCH", meaning: "Broad Bull Channel", category: "Bull Channels" },
+      { abbr: "TBLC", meaning: "Tight Bull Channel", category: "Bull Channels" },
+      { abbr: "TBLCH", meaning: "Tight Bull Channel", category: "Bull Channels" },
+      { abbr: "BLMC", meaning: "Bull Micro Channel \u2014 every low at/above prior", category: "Bull Channels" },
+      { abbr: "BRC", meaning: "Bear Channel", category: "Bear Channels" },
+      { abbr: "BRCH", meaning: "Bear Channel", category: "Bear Channels" },
+      { abbr: "BBRCH", meaning: "Broad Bear Channel", category: "Bear Channels" },
+      { abbr: "TBRC", meaning: "Tight Bear Channel", category: "Bear Channels" },
+      { abbr: "TBRCH", meaning: "Tight Bear Channel", category: "Bear Channels" },
+      { abbr: "BRMC", meaning: "Bear Micro Channel", category: "Bear Channels" },
+      { abbr: "TL", meaning: "Trend Line", category: "Channel Lines" },
+      { abbr: "TCL", meaning: "Trend Channel Line", category: "Channel Lines" },
+      { abbr: "BLTL", meaning: "Bull Trend Line", category: "Channel Lines" },
+      { abbr: "BRTL", meaning: "Bear Trend Line", category: "Channel Lines" },
+      { abbr: "MTL", meaning: "Micro Trend Line", category: "Channel Lines" },
+      { abbr: "MTCL", meaning: "Micro Trend Channel Line", category: "Channel Lines" },
+      { abbr: "FTCL", meaning: "Failed Trend Channel Line", category: "Channel Lines" },
+      { abbr: "DL", meaning: "Dueling Lines", category: "Channel Lines" },
+    ],
+  },
+  14: {
+    name: "Gaps & Globex",
+    categories: ["Gap Types", "Special Gaps", "Big Gaps", "Globex"],
+    terms: [
+      { abbr: "G", meaning: "Gap", category: "Gap Types" },
+      { abbr: "GU", meaning: "Gap Up", category: "Gap Types" },
+      { abbr: "GD", meaning: "Gap Down", category: "Gap Types" },
+      { abbr: "GB", meaning: "Gap Bar", category: "Gap Types" },
+      { abbr: "GT", meaning: "Gap Test", category: "Gap Types" },
+      { abbr: "GDD", meaning: "Gap down on daily", category: "Gap Types" },
+      { abbr: "GUD", meaning: "Gap up on daily", category: "Gap Types" },
+      { abbr: "BAG", meaning: "Breakaway Gap \u2014 first gap after reversal", category: "Special Gaps" },
+      { abbr: "EG", meaning: "Exhaustion Gap", category: "Special Gaps" },
+      { abbr: "EGD", meaning: "Exhaustion Gap Down", category: "Special Gaps" },
+      { abbr: "EGU", meaning: "Exhaustion Gap Up", category: "Special Gaps" },
+      { abbr: "MG", meaning: "Measuring Gap", category: "Special Gaps" },
+      { abbr: "BDG", meaning: "Body Gap", category: "Special Gaps" },
+      { abbr: "BDGD", meaning: "Body Gap Down", category: "Special Gaps" },
+      { abbr: "BDGU", meaning: "Body Gap Up", category: "Special Gaps" },
+      { abbr: "BGD", meaning: "Big Gap Down \u2014 80% reversal in 1st hour", category: "Big Gaps" },
+      { abbr: "BGU", meaning: "Big Gap Up \u2014 80% reversal in 1st hour", category: "Big Gaps" },
+      { abbr: "SGD", meaning: "Small Gap Down \u2014 usually closes in 1st hour", category: "Big Gaps" },
+      { abbr: "SGU", meaning: "Small Gap Up \u2014 usually closes in 1st hour", category: "Big Gaps" },
+      { abbr: "GX", meaning: "Globex Session", category: "Globex" },
+      { abbr: "GXH", meaning: "Globex High", category: "Globex" },
+      { abbr: "GXL", meaning: "Globex Low", category: "Globex" },
+      { abbr: "GXR", meaning: "Globex Range", category: "Globex" },
+    ],
+  },
+  15: {
+    name: "Climaxes",
+    categories: ["Core Climaxes", "Exhaustion", "Consecutive", "Yesterday Climax"],
+    terms: [
+      { abbr: "X", meaning: "Climax \u2014 too far too fast", category: "Core Climaxes" },
+      { abbr: "XS", meaning: "Climaxes", category: "Core Climaxes" },
+      { abbr: "BX", meaning: "Buy Climax \u2014 exhausted buyers", category: "Core Climaxes" },
+      { abbr: "SX", meaning: "Sell Climax \u2014 exhausted sellers", category: "Core Climaxes" },
+      { abbr: "BXH", meaning: "Buy Climax High", category: "Core Climaxes" },
+      { abbr: "BXL", meaning: "Buy Climax Low", category: "Core Climaxes" },
+      { abbr: "SXH", meaning: "Sell Climax High", category: "Core Climaxes" },
+      { abbr: "SXL", meaning: "Sell Climax Low", category: "Core Climaxes" },
+      { abbr: "EBX", meaning: "Exhaustive Buy Climax", category: "Exhaustion" },
+      { abbr: "ESX", meaning: "Exhaustive Sell Climax", category: "Exhaustion" },
+      { abbr: "EBL", meaning: "Exhausted Bulls", category: "Exhaustion" },
+      { abbr: "EBR", meaning: "Exhausted Bears", category: "Exhaustion" },
+      { abbr: "CCBX", meaning: "Consecutive Buy Climax", category: "Consecutive" },
+      { abbr: "CCSX", meaning: "Consecutive Sell Climax", category: "Consecutive" },
+      { abbr: "CSX", meaning: "Consecutive sell climaxes", category: "Consecutive" },
+      { abbr: "YBX", meaning: "Yesterday buy climax \u2014 only 25% strong bull today", category: "Yesterday Climax" },
+      { abbr: "YSX", meaning: "Yesterday sell climax \u2014 only 25% strong bear today", category: "Yesterday Climax" },
+      { abbr: "PSX", meaning: "Possible Sell Climax", category: "Yesterday Climax" },
+      { abbr: "VB", meaning: "V Bottom \u2014 strong reversal up from sell climax", category: "Yesterday Climax" },
+      { abbr: "VT", meaning: "V Top \u2014 strong reversal down from buy climax", category: "Yesterday Climax" },
+    ],
+  },
+  16: {
+    name: "Reversals",
+    categories: ["Major Reversals", "Reversal Direction", "Trend Reversals", "Midday Reversal"],
+    terms: [
+      { abbr: "MTR", meaning: "Major Trend Reversal", category: "Major Reversals" },
+      { abbr: "DTMTR", meaning: "Double Top Major Trend Reversal", category: "Major Reversals" },
+      { abbr: "DBMTR", meaning: "Double Bottom Major Trend Reversal", category: "Major Reversals" },
+      { abbr: "HHMTR", meaning: "Higher High Major Trend Reversal", category: "Major Reversals" },
+      { abbr: "HLMTR", meaning: "Higher Low Major Trend Reversal", category: "Major Reversals" },
+      { abbr: "LHMTR", meaning: "Lower High Major Trend Reversal", category: "Major Reversals" },
+      { abbr: "LLMTR", meaning: "Lower Low Major Trend Reversal", category: "Major Reversals" },
+      { abbr: "REV", meaning: "Reversal", category: "Reversal Direction" },
+      { abbr: "REVD", meaning: "Reversal Down", category: "Reversal Direction" },
+      { abbr: "REVU", meaning: "Reversal Up", category: "Reversal Direction" },
+      { abbr: "RV", meaning: "Reversal", category: "Reversal Direction" },
+      { abbr: "RVD", meaning: "Reversal Down", category: "Reversal Direction" },
+      { abbr: "RVU", meaning: "Reversal Up", category: "Reversal Direction" },
+      { abbr: "BLTRV", meaning: "Bull trend reversal", category: "Trend Reversals" },
+      { abbr: "BRTRV", meaning: "Bear trend reversal", category: "Trend Reversals" },
+      { abbr: "MDR", meaning: "Midday reversal \u2014 sometimes bar 40-41", category: "Midday Reversal" },
+      { abbr: "MDRD", meaning: "Midday reversal down", category: "Midday Reversal" },
+      { abbr: "MDRU", meaning: "Midday reversal up", category: "Midday Reversal" },
+    ],
+  },
+  17: {
+    name: "Double Tops & Bottoms",
+    categories: ["Double Bottoms", "Double Tops", "Variations", "Micro"],
+    terms: [
+      { abbr: "DB", meaning: "Double Bottom", category: "Double Bottoms" },
+      { abbr: "DBS", meaning: "Double Bottoms", category: "Double Bottoms" },
+      { abbr: "DBBF", meaning: "Double Bottom Bull Flag", category: "Double Bottoms" },
+      { abbr: "DBHL", meaning: "Double Bottom Higher Low", category: "Double Bottoms" },
+      { abbr: "DBLL", meaning: "Double Bottom Lower Low", category: "Double Bottoms" },
+      { abbr: "DBPB", meaning: "Double Bottom Pullback", category: "Double Bottoms" },
+      { abbr: "DT", meaning: "Double Top", category: "Double Tops" },
+      { abbr: "DTS", meaning: "Double Tops", category: "Double Tops" },
+      { abbr: "DTBF", meaning: "Double Top Bear Flag", category: "Double Tops" },
+      { abbr: "DTHH", meaning: "Double Top Higher High", category: "Double Tops" },
+      { abbr: "DTLH", meaning: "Double Top Lower High", category: "Double Tops" },
+      { abbr: "DTPB", meaning: "Double Top Pullback", category: "Double Tops" },
+      { abbr: "DP", meaning: "Double Top or Bottom Pullback", category: "Variations" },
+      { abbr: "HHDT", meaning: "Higher High Double Top", category: "Variations" },
+      { abbr: "LHDT", meaning: "Lower High Double Top", category: "Variations" },
+      { abbr: "HLDB", meaning: "Higher Low Double Bottom", category: "Variations" },
+      { abbr: "LLDB", meaning: "Lower Low Double Bottom", category: "Variations" },
+      { abbr: "TT", meaning: "Triple Top", category: "Variations" },
+      { abbr: "NDT", meaning: "Nested Double Top", category: "Variations" },
+      { abbr: "NDB", meaning: "Nested Double Bottom", category: "Variations" },
+      { abbr: "MDB", meaning: "Micro Double Bottom", category: "Micro" },
+      { abbr: "MDT", meaning: "Micro Double Top", category: "Micro" },
+      { abbr: "MTB", meaning: "Micro Triple Bottom", category: "Micro" },
+      { abbr: "MTT", meaning: "Micro Triple Top", category: "Micro" },
+    ],
+  },
+  18: {
+    name: "Wedges & Flags",
+    categories: ["Wedges", "Truncated Wedges", "Flags", "Final Flags"],
+    terms: [
+      { abbr: "W", meaning: "Wedge \u2014 any 3-push pattern", category: "Wedges" },
+      { abbr: "WB", meaning: "Wedge Bottom", category: "Wedges" },
+      { abbr: "WT", meaning: "Wedge Top", category: "Wedges" },
+      { abbr: "WS", meaning: "Wedges", category: "Wedges" },
+      { abbr: "MW", meaning: "MicroWedge \u2014 3-4 bars", category: "Wedges" },
+      { abbr: "NW", meaning: "Nested Wedge", category: "Wedges" },
+      { abbr: "PW", meaning: "Parabolic Wedge", category: "Wedges" },
+      { abbr: "CCW", meaning: "Consecutive wedges \u2014 higher reversal probability", category: "Wedges" },
+      { abbr: "TW", meaning: "Truncated Wedge", category: "Truncated Wedges" },
+      { abbr: "TWB", meaning: "Truncated Wedge Bottom \u2014 3rd leg didn't go below 2nd", category: "Truncated Wedges" },
+      { abbr: "TWT", meaning: "Truncated Wedge Top \u2014 3rd leg didn't go above 2nd", category: "Truncated Wedges" },
+      { abbr: "BLF", meaning: "Bull Flag", category: "Flags" },
+      { abbr: "BRF", meaning: "Bear Flag", category: "Flags" },
+      { abbr: "WBLF", meaning: "Wedge Bull Flag", category: "Flags" },
+      { abbr: "WBRF", meaning: "Wedge Bear Flag", category: "Flags" },
+      { abbr: "FF", meaning: "Final Flag \u2014 last pullback, BO usually fails", category: "Final Flags" },
+      { abbr: "BFF", meaning: "Bar Final Flag", category: "Final Flags" },
+      { abbr: "1BFF", meaning: "One Bar Final Flag", category: "Final Flags" },
+      { abbr: "FBLF", meaning: "Final Bull Flag", category: "Final Flags" },
+      { abbr: "FBRF", meaning: "Final Bear Flag", category: "Final Flags" },
+    ],
+  },
+  19: {
+    name: "Chart Patterns",
+    categories: ["Head & Shoulders", "Triangles", "Cup & Handle", "Other Patterns"],
+    terms: [
+      { abbr: "HSB", meaning: "Head and Shoulders Bottom", category: "Head & Shoulders" },
+      { abbr: "HST", meaning: "Head and Shoulders Top", category: "Head & Shoulders" },
+      { abbr: "TRI", meaning: "Triangle \u2014 5+ reversals, 50/50 breakout", category: "Triangles" },
+      { abbr: "ET", meaning: "Expanding Triangle", category: "Triangles" },
+      { abbr: "ATRI", meaning: "Apex of Triangle \u2014 Breakout Mode", category: "Triangles" },
+      { abbr: "CUPH", meaning: "Cup and Handle", category: "Cup & Handle" },
+      { abbr: "CUPU", meaning: "Cup and Handle Bull Flag", category: "Cup & Handle" },
+      { abbr: "CUPD", meaning: "Cup and Handle Bear Flag", category: "Cup & Handle" },
+      { abbr: "CHB", meaning: "Cup and Handle Bottom", category: "Cup & Handle" },
+      { abbr: "CHT", meaning: "Cup and Handle Top", category: "Cup & Handle" },
+      { abbr: "LGB", meaning: "Ledge Bottom \u2014 4+ bars same low, 80% BO below", category: "Other Patterns" },
+      { abbr: "LGT", meaning: "Ledge Top \u2014 4+ bars same high, 80% BO above", category: "Other Patterns" },
+      { abbr: "DIV", meaning: "Divergence", category: "Other Patterns" },
+      { abbr: "DDIV", meaning: "Double Divergence", category: "Other Patterns" },
+    ],
+  },
+  20: {
+    name: "Traps",
+    categories: ["Basic Traps", "Leg Traps", "End of Day Traps", "Disappointed Traders"],
+    terms: [
+      { abbr: "TRP", meaning: "Trap \u2014 breakout that reverses", category: "Basic Traps" },
+      { abbr: "BLTP", meaning: "Bull Trap \u2014 failed bull breakout", category: "Basic Traps" },
+      { abbr: "BRTP", meaning: "Bear Trap \u2014 failed bear breakout", category: "Basic Traps" },
+      { abbr: "2LT", meaning: "Second Leg Trap \u2014 possible failed BO", category: "Leg Traps" },
+      { abbr: "2LTP", meaning: "Second Leg Trap \u2014 possible reversal", category: "Leg Traps" },
+      { abbr: "2LBLTP", meaning: "2nd Leg Bull Trap \u2014 big bull BO reverses down", category: "Leg Traps" },
+      { abbr: "2LBRTP", meaning: "2nd Leg Bear Trap \u2014 big bear BO reverses up", category: "Leg Traps" },
+      { abbr: "EBLT", meaning: "End of day Bull Trap", category: "End of Day Traps" },
+      { abbr: "EBRT", meaning: "End of day Bear Trap", category: "End of Day Traps" },
+      { abbr: "DBL", meaning: "Disappointed Bulls", category: "Disappointed Traders" },
+      { abbr: "DBR", meaning: "Disappointed Bears", category: "Disappointed Traders" },
+      { abbr: "DBTC", meaning: "Disappointed Buy The Close Bulls", category: "Disappointed Traders" },
+      { abbr: "DSTC", meaning: "Disappointed Sell The Close Bears", category: "Disappointed Traders" },
+    ],
+  },
+  21: {
+    name: "Probability & Risk",
+    categories: ["Probability", "Traders Equation", "Risk Management"],
+    terms: [
+      { abbr: "HP", meaning: "High Probability", category: "Probability" },
+      { abbr: "LP", meaning: "Low Probability \u2014 swing only or wait", category: "Probability" },
+      { abbr: "HRP", meaning: "Higher Probability", category: "Probability" },
+      { abbr: "LRP", meaning: "Lower Probability", category: "Probability" },
+      { abbr: "HPW", meaning: "Higher Probability to Wait", category: "Probability" },
+      { abbr: "LPB", meaning: "Low Probability Buy", category: "Probability" },
+      { abbr: "LPS", meaning: "Low Probability Short", category: "Probability" },
+      { abbr: "NS", meaning: "Not high enough probability for scalp", category: "Probability" },
+      { abbr: "TE", meaning: "Traders Equation \u2014 prob x reward > loss x risk", category: "Traders Equation" },
+      { abbr: "WTE", meaning: "Weak Traders Equation", category: "Traders Equation" },
+      { abbr: "STE", meaning: "Strong Traders Equation", category: "Traders Equation" },
+      { abbr: "RR", meaning: "Risk Reward Ratio", category: "Traders Equation" },
+      { abbr: "IR", meaning: "Initial Risk", category: "Risk Management" },
+      { abbr: "AR", meaning: "Actual Risk", category: "Risk Management" },
+      { abbr: "BE", meaning: "Breakeven", category: "Risk Management" },
+      { abbr: "BBE", meaning: "Breakeven", category: "Risk Management" },
+      { abbr: "NWS", meaning: "Need Wide Stop", category: "Risk Management" },
+      { abbr: "PT", meaning: "Profit Target", category: "Risk Management" },
+    ],
+  },
+  22: {
+    name: "Order Types & Execution",
+    categories: ["Limit Orders", "Better Entry Methods", "Buy Actions", "Sell Actions"],
+    terms: [
+      { abbr: "LIM", meaning: "Limit order", category: "Limit Orders" },
+      { abbr: "LO", meaning: "Limit order or orders", category: "Limit Orders" },
+      { abbr: "LOA", meaning: "Sell with Limit Order Above bars", category: "Limit Orders" },
+      { abbr: "LOB", meaning: "Buy with Limit Order Below bars", category: "Limit Orders" },
+      { abbr: "LOBL", meaning: "Limit Order Bulls", category: "Limit Orders" },
+      { abbr: "LOBR", meaning: "Limit Order Bears", category: "Limit Orders" },
+      { abbr: "LBL", meaning: "Limit order Bull scalpers", category: "Limit Orders" },
+      { abbr: "LBR", meaning: "Limit order Bear scalpers", category: "Limit Orders" },
+      { abbr: "LOM", meaning: "Limit Order Market", category: "Limit Orders" },
+      { abbr: "BLO", meaning: "Better to enter with Limit Orders", category: "Better Entry Methods" },
+      { abbr: "BELO", meaning: "Better to Enter with Limit Order", category: "Better Entry Methods" },
+      { abbr: "BBLO", meaning: "Better to Buy with Limit Orders below", category: "Better Entry Methods" },
+      { abbr: "BSLO", meaning: "Better to Sell with Limit Orders above", category: "Better Entry Methods" },
+      { abbr: "BLSH", meaning: "Buy Low Sell High", category: "Better Entry Methods" },
+      { abbr: "BBSA", meaning: "Buyers Below, Sellers Above", category: "Better Entry Methods" },
+      { abbr: "B", meaning: "Buy or Long", category: "Buy Actions" },
+      { abbr: "BA", meaning: "Buy Above \u2014 probably buyers at high", category: "Buy Actions" },
+      { abbr: "BB", meaning: "Buy Below \u2014 buyers scaling in lower", category: "Buy Actions" },
+      { abbr: "BZ", meaning: "Buy Zone", category: "Buy Actions" },
+      { abbr: "BTH", meaning: "Buy The High bull trend", category: "Buy Actions" },
+      { abbr: "BTM", meaning: "Buy The Market \u2014 strong bull trend", category: "Buy Actions" },
+      { abbr: "S", meaning: "Sell or Short", category: "Sell Actions" },
+      { abbr: "SA", meaning: "Sell Above", category: "Sell Actions" },
+      { abbr: "SD", meaning: "Sideways to Down, or Sold", category: "Sell Actions" },
+      { abbr: "SU", meaning: "Sideways to Up", category: "Sell Actions" },
+      { abbr: "SZ", meaning: "Sell Zone", category: "Sell Actions" },
+      { abbr: "STL", meaning: "Sell The Low bear trend", category: "Sell Actions" },
+      { abbr: "STM", meaning: "Sell The Market \u2014 strong bear trend", category: "Sell Actions" },
+    ],
+  },
+  23: {
+    name: "Moving Averages",
+    categories: ["Main EMA", "Daily/Weekly MAs", "Multi-Timeframe", "Gap Bars"],
+    terms: [
+      { abbr: "EMA", meaning: "20 bar Exponential Moving Average", category: "Main EMA" },
+      { abbr: "MA", meaning: "Moving Average \u2014 20 bar EMA default", category: "Main EMA" },
+      { abbr: "MAG", meaning: "Moving Average Gap Bar", category: "Main EMA" },
+      { abbr: "MAGB", meaning: "Moving Average Gap bar Buy signal", category: "Main EMA" },
+      { abbr: "MAGS", meaning: "Moving Average Gap bar Sell signal", category: "Main EMA" },
+      { abbr: "20DM", meaning: "20 day exp moving average", category: "Daily/Weekly MAs" },
+      { abbr: "20WM", meaning: "20 week exp moving average", category: "Daily/Weekly MAs" },
+      { abbr: "20MM", meaning: "20 month exp moving average", category: "Daily/Weekly MAs" },
+      { abbr: "50M", meaning: "50 bar simple moving average", category: "Daily/Weekly MAs" },
+      { abbr: "100M", meaning: "100 bar simple moving average", category: "Daily/Weekly MAs" },
+      { abbr: "150M", meaning: "150 bar simple moving average", category: "Daily/Weekly MAs" },
+      { abbr: "200M", meaning: "200 bar simple moving average", category: "Daily/Weekly MAs" },
+      { abbr: "15MA", meaning: "15 min 20 bar MA on 5 min chart", category: "Multi-Timeframe" },
+      { abbr: "60MA", meaning: "60 minute 20 bar EMA", category: "Multi-Timeframe" },
+      { abbr: "2MA", meaning: "5 min EMA and 60 min EMA", category: "Multi-Timeframe" },
+      { abbr: "2MAF", meaning: "Both MAs flat and near \u2014 sideways market", category: "Multi-Timeframe" },
+      { abbr: "2FMA", meaning: "Both MAs flat \u2014 TR and Limit Order Market", category: "Multi-Timeframe" },
+      { abbr: "20GB", meaning: "20 Gap Bars \u2014 20 bars not touching MA", category: "Gap Bars" },
+      { abbr: "20GBB", meaning: "20 Gap Bar Buy setup \u2014 buy PB to EMA", category: "Gap Bars" },
+      { abbr: "20GBS", meaning: "20 Gap Bar Sell setup \u2014 sell PB to EMA", category: "Gap Bars" },
+      { abbr: "99BL", meaning: "99.5% chance of bars with low below MA today", category: "Gap Bars" },
+      { abbr: "99BR", meaning: "99.5% chance of bars with high above MA today", category: "Gap Bars" },
+    ],
+  },
+  24: {
+    name: "Time & Session",
+    categories: ["Time of Day", "Day Boundaries", "First/Last Days", "End of Day Patterns"],
+    terms: [
+      { abbr: "10M", meaning: "Middle third of day \u2014 often tight TR", category: "Time of Day" },
+      { abbr: "40M", meaning: "Bar 40-41 often reversal or breakout", category: "Time of Day" },
+      { abbr: "MD", meaning: "Middle of day \u2014 often TTR and LOM", category: "Time of Day" },
+      { abbr: "PST", meaning: "Pacific Standard Time", category: "Time of Day" },
+      { abbr: "FRD", meaning: "For Rest of the Day", category: "Time of Day" },
+      { abbr: "ASPT", meaning: "At Some Point Today", category: "Time of Day" },
+      { abbr: "EOD", meaning: "End of Day", category: "Day Boundaries" },
+      { abbr: "EOW", meaning: "End of Week", category: "Day Boundaries" },
+      { abbr: "EOM", meaning: "End of Month", category: "Day Boundaries" },
+      { abbr: "EOQ", meaning: "End of Quarter", category: "Day Boundaries" },
+      { abbr: "EOY", meaning: "End Of Year", category: "Day Boundaries" },
+      { abbr: "FDM", meaning: "First trading day of month", category: "First/Last Days" },
+      { abbr: "FDW", meaning: "First trading day of week", category: "First/Last Days" },
+      { abbr: "FDY", meaning: "First trading day of year", category: "First/Last Days" },
+      { abbr: "LDM", meaning: "Last trading day of month", category: "First/Last Days" },
+      { abbr: "LDQ", meaning: "Last trading day of quarter", category: "First/Last Days" },
+      { abbr: "LDW", meaning: "Last trading day of week", category: "First/Last Days" },
+      { abbr: "EBTC", meaning: "End of day Buy The Close bull trend", category: "End of Day Patterns" },
+      { abbr: "ESTC", meaning: "End of day Sell the Close bear trend", category: "End of Day Patterns" },
+      { abbr: "BTCE", meaning: "Buy the Close rally until End of day", category: "End of Day Patterns" },
+      { abbr: "STCE", meaning: "Sell the Close selloff until End of day", category: "End of Day Patterns" },
+      { abbr: "ELOM", meaning: "End of day Limit Order Market", category: "End of Day Patterns" },
+      { abbr: "FOMC", meaning: "Fed Open Market Committee announcement", category: "End of Day Patterns" },
+      { abbr: "GDP", meaning: "Gross Domestic Product", category: "End of Day Patterns" },
+    ],
+  },
+  25: {
+    name: "Time Frames",
+    categories: ["Chart Times", "Hours"],
+    terms: [
+      { abbr: "15M", meaning: "15 Minute bar or chart", category: "Chart Times" },
+      { abbr: "60M", meaning: "60 minute bar or chart", category: "Chart Times" },
+      { abbr: "60MC", meaning: "60 Minute Chart", category: "Chart Times" },
+      { abbr: "TF", meaning: "Time Frame", category: "Chart Times" },
+      { abbr: "HTF", meaning: "Higher Time Frame", category: "Chart Times" },
+      { abbr: "1H", meaning: "1 Hour", category: "Hours" },
+      { abbr: "2H", meaning: "2 Hour", category: "Hours" },
+      { abbr: "3H", meaning: "3 Hour", category: "Hours" },
+      { abbr: "4H", meaning: "4 Hour", category: "Hours" },
+      { abbr: "5H", meaning: "5 Hour", category: "Hours" },
+      { abbr: "6H", meaning: "6 Hour", category: "Hours" },
+      { abbr: "2HM", meaning: "Two hours from moving average", category: "Hours" },
+    ],
+  },
+  26: {
+    name: "Ticks & Tick Traps",
+    categories: ["Small Ticks", "Tick Traps", "Larger Traps", "Big Traps"],
+    terms: [
+      { abbr: "1T", meaning: "1 Tick", category: "Small Ticks" },
+      { abbr: "2T", meaning: "2 Ticks", category: "Small Ticks" },
+      { abbr: "3T", meaning: "3 Ticks", category: "Small Ticks" },
+      { abbr: "4T", meaning: "4 Ticks", category: "Small Ticks" },
+      { abbr: "5T", meaning: "5 Tick Trap", category: "Tick Traps" },
+      { abbr: "6T", meaning: "6 Ticks", category: "Tick Traps" },
+      { abbr: "9T", meaning: "9 Tick Trap", category: "Tick Traps" },
+      { abbr: "13T", meaning: "13 Tick Trap \u2014 1 tick shy of 3 points", category: "Tick Traps" },
+      { abbr: "16T", meaning: "16 Ticks \u2014 trap for limit orders", category: "Larger Traps" },
+      { abbr: "17T", meaning: "17 Tick Trap \u2014 1 tick shy of 4 points", category: "Larger Traps" },
+      { abbr: "18T", meaning: "18 Ticks", category: "Larger Traps" },
+      { abbr: "21T", meaning: "21 Tick Trap \u2014 1 tick shy of 5 points", category: "Larger Traps" },
+      { abbr: "41T", meaning: "41 Tick Trap", category: "Big Traps" },
+    ],
+  },
+  27: {
+    name: "Opening Range (18-Bar)",
+    categories: ["18-Bar Range", "Breakout Up", "Breakout Down"],
+    terms: [
+      { abbr: "18B", meaning: "18 Bar range", category: "18-Bar Range" },
+      { abbr: "18BO", meaning: "Breakout of range of 1st 18 bars", category: "18-Bar Range" },
+      { abbr: "B18", meaning: "Often get Breakout between bars 16-18", category: "18-Bar Range" },
+      { abbr: "18BU", meaning: "BO Above 18-bar \u2014 80% won't make new LOD", category: "Breakout Up" },
+      { abbr: "18BOU", meaning: "BO Above 18-bar range", category: "Breakout Up" },
+      { abbr: "18BOUF", meaning: "Failed BO above 18-bar \u2014 only 20% new LOD", category: "Breakout Up" },
+      { abbr: "18BD", meaning: "BO Below 18-bar \u2014 80% won't make new HOD", category: "Breakout Down" },
+      { abbr: "18BOD", meaning: "BO Below 18-bar range", category: "Breakout Down" },
+      { abbr: "18BODF", meaning: "Failed BO below 18-bar \u2014 only 20% new HOD", category: "Breakout Down" },
+    ],
+  },
+  28: {
+    name: "Measured Moves & Magnets",
+    categories: ["Measured Moves", "Magnets", "Vacuum Tests"],
+    terms: [
+      { abbr: "MM", meaning: "Measured Move", category: "Measured Moves" },
+      { abbr: "MMS", meaning: "Measured Moves", category: "Measured Moves" },
+      { abbr: "MMD", meaning: "Measured Move Down", category: "Measured Moves" },
+      { abbr: "MMU", meaning: "Measured Move Up", category: "Measured Moves" },
+      { abbr: "MMT", meaning: "Measured Move Target", category: "Measured Moves" },
+      { abbr: "MMTA", meaning: "Measured Move Target Above", category: "Measured Moves" },
+      { abbr: "MMTB", meaning: "Measured Move Target Below", category: "Measured Moves" },
+      { abbr: "MGA", meaning: "Magnet Above", category: "Magnets" },
+      { abbr: "MGB", meaning: "Magnet Below", category: "Magnets" },
+      { abbr: "MGN", meaning: "Magnet", category: "Magnets" },
+      { abbr: "VTR", meaning: "Vacuum Test of Resistance", category: "Vacuum Tests" },
+      { abbr: "VTS", meaning: "Vacuum Test of Support", category: "Vacuum Tests" },
+      { abbr: "BV", meaning: "Buy Vacuum test of resistance", category: "Vacuum Tests" },
+      { abbr: "SV", meaning: "Sell Vacuum test of support", category: "Vacuum Tests" },
+    ],
+  },
+  29: {
+    name: "Bull Patterns",
+    categories: ["Bull Bars", "Bull Moves", "Bull Reversals", "Bull Traps/Context"],
+    terms: [
+      { abbr: "BBL", meaning: "Big Bull bar", category: "Bull Bars" },
+      { abbr: "BBLB", meaning: "Big Bull Bar", category: "Bull Bars" },
+      { abbr: "BBLBC", meaning: "Big Bull Bar Closing near its high", category: "Bull Bars" },
+      { abbr: "BLBC", meaning: "Bull Bar Closing near its high", category: "Bull Bars" },
+      { abbr: "BBLD", meaning: "Big bull day", category: "Bull Bars" },
+      { abbr: "BBLDC", meaning: "Big Bull Day Closing near its high", category: "Bull Bars" },
+      { abbr: "BLFT", meaning: "Bull Follow-Through", category: "Bull Moves" },
+      { abbr: "BGP", meaning: "Buying Pressure", category: "Bull Moves" },
+      { abbr: "BLNM", meaning: "Bulls Not Making Money \u2014 better to sell", category: "Bull Moves" },
+      { abbr: "BLR", meaning: "Bull Reversal", category: "Bull Reversals" },
+      { abbr: "BLRB", meaning: "Bull Reversal Bar", category: "Bull Reversals" },
+      { abbr: "BLE", meaning: "Bulls exit below bar", category: "Bull Traps/Context" },
+      { abbr: "BLGU", meaning: "Bear Surprise \u2014 bulls giving up", category: "Bull Traps/Context" },
+    ],
+  },
+  30: {
+    name: "Bear Patterns",
+    categories: ["Bear Bars", "Bear Moves", "Bear Reversals", "Bear Traps/Context"],
+    terms: [
+      { abbr: "BBR", meaning: "Big Bear bar", category: "Bear Bars" },
+      { abbr: "BBRB", meaning: "Big Bear Bar", category: "Bear Bars" },
+      { abbr: "BBRBC", meaning: "Big Bear Bar Closing near its low", category: "Bear Bars" },
+      { abbr: "BRBC", meaning: "Bear Bar Closing near its low", category: "Bear Bars" },
+      { abbr: "BBRD", meaning: "Big bear day", category: "Bear Bars" },
+      { abbr: "BBRDC", meaning: "Big Bear Day Closing near its low", category: "Bear Bars" },
+      { abbr: "BRFT", meaning: "Bear Follow-Through", category: "Bear Moves" },
+      { abbr: "SGP", meaning: "Selling Pressure", category: "Bear Moves" },
+      { abbr: "BRNM", meaning: "Bears Not Making Money \u2014 better to buy", category: "Bear Moves" },
+      { abbr: "SRS", meaning: "Sellers", category: "Bear Moves" },
+      { abbr: "BRR", meaning: "Bear Reversal", category: "Bear Reversals" },
+      { abbr: "BRRB", meaning: "Bear Reversal Bar", category: "Bear Reversals" },
+      { abbr: "BRVD", meaning: "Bear Reversal Day", category: "Bear Reversals" },
+      { abbr: "BRE", meaning: "Bears exit above bar", category: "Bear Traps/Context" },
+      { abbr: "BRGU", meaning: "Bull Surprise \u2014 bears giving up", category: "Bear Traps/Context" },
+    ],
+  },
+  31: {
+    name: "Buying & Selling Context",
+    categories: ["Buyer Probability", "Seller Probability", "Scaling", "Give Up & Special"],
+    terms: [
+      { abbr: "PBA", meaning: "Probably Buyers Above", category: "Buyer Probability" },
+      { abbr: "PBB", meaning: "Probably Buyers Below", category: "Buyer Probability" },
+      { abbr: "PH", meaning: "Possible High of day \u2014 reasonable sell", category: "Buyer Probability" },
+      { abbr: "PL", meaning: "Possible Low of day \u2014 reasonable buy", category: "Buyer Probability" },
+      { abbr: "PSA", meaning: "Probably Sellers Above", category: "Seller Probability" },
+      { abbr: "PSB", meaning: "Probably Sellers Below", category: "Seller Probability" },
+      { abbr: "PP", meaning: "Probably or probable", category: "Seller Probability" },
+      { abbr: "BBS", meaning: "Bulls scale in lower, bears scale in higher", category: "Scaling" },
+      { abbr: "BG", meaning: "Buying", category: "Scaling" },
+      { abbr: "SG", meaning: "Selling", category: "Scaling" },
+      { abbr: "PTG", meaning: "Profit Taking", category: "Scaling" },
+      { abbr: "PTZ", meaning: "Profit Taking Zone", category: "Scaling" },
+      { abbr: "GUB", meaning: "Give Up Bar \u2014 often leads to swing", category: "Give Up & Special" },
+      { abbr: "T", meaning: "Today or Tick", category: "Give Up & Special" },
+      { abbr: "AV", meaning: "Average", category: "Give Up & Special" },
+      { abbr: "AVR", meaning: "Average range of ~10 bars", category: "Give Up & Special" },
+      { abbr: "/", meaning: "but", category: "Give Up & Special" },
+      { abbr: "?", meaning: "Possible", category: "Give Up & Special" },
+    ],
+  },
+  32: {
+    name: "Moving Average Details",
+    categories: ["50-bar MAs", "100-bar MAs", "150-bar MAs", "200-bar MAs"],
+    terms: [
+      { abbr: "50MA", meaning: "50 bar simple moving average", category: "50-bar MAs" },
+      { abbr: "50MD", meaning: "50 day simple moving average", category: "50-bar MAs" },
+      { abbr: "100MA", meaning: "100 bar simple moving average", category: "100-bar MAs" },
+      { abbr: "100MD", meaning: "100 day simple moving average", category: "100-bar MAs" },
+      { abbr: "150MA", meaning: "150 bar simple moving average", category: "150-bar MAs" },
+      { abbr: "150MD", meaning: "150 day simple moving average", category: "150-bar MAs" },
+      { abbr: "200MA", meaning: "200 bar simple moving average", category: "200-bar MAs" },
+      { abbr: "200MD", meaning: "200 day simple moving average", category: "200-bar MAs" },
+      { abbr: "20DMA", meaning: "20 day exp moving average", category: "200-bar MAs" },
+      { abbr: "20WMA", meaning: "20 week exp moving average", category: "200-bar MAs" },
+      { abbr: "20MMA", meaning: "20 month exp moving average", category: "200-bar MAs" },
+      { abbr: "20GB50BL", meaning: "No PB to EMA in 50 bars \u2014 expect test", category: "200-bar MAs" },
+      { abbr: "20GB50BR", meaning: "No PB to EMA in 50 bars \u2014 expect test", category: "200-bar MAs" },
+    ],
+  },
+  33: {
+    name: "End of Day & Closes",
+    categories: ["Close Levels", "Highs/Lows Extra", "Failure Types", "Consecutive Bars"],
+    terms: [
+      { abbr: "COD", meaning: "Close of Day", category: "Close Levels" },
+      { abbr: "HC", meaning: "Highest Close", category: "Close Levels" },
+      { abbr: "LC", meaning: "Lowest Close", category: "Close Levels" },
+      { abbr: "CD", meaning: "Closed", category: "Close Levels" },
+      { abbr: "CS", meaning: "Closes", category: "Close Levels" },
+      { abbr: "HS", meaning: "Highs", category: "Highs/Lows Extra" },
+      { abbr: "LS", meaning: "Lows", category: "Highs/Lows Extra" },
+      { abbr: "HOO", meaning: "High of opening range", category: "Highs/Lows Extra" },
+      { abbr: "FD", meaning: "Failed", category: "Failure Types" },
+      { abbr: "FG", meaning: "Failing", category: "Failure Types" },
+      { abbr: "FS", meaning: "Fails or Failures", category: "Failure Types" },
+      { abbr: "BD", meaning: "Bars Down", category: "Consecutive Bars" },
+      { abbr: "BU", meaning: "Bars Up", category: "Consecutive Bars" },
+      { abbr: "CC", meaning: "Consecutive", category: "Consecutive Bars" },
+      { abbr: "CCBL", meaning: "Consecutive Bull Bars", category: "Consecutive Bars" },
+      { abbr: "CCBR", meaning: "Consecutive Bear Bars", category: "Consecutive Bars" },
+    ],
+  },
+};
+
+
+const GROUP_LABELS = {
+  1: "Core Basics \u2014 The Foundation",
+  2: "Price Levels \u2014 Highs & Lows",
+  3: "Price Structure \u2014 HH, HL, LH, LL",
+  4: "Always In \u2014 Who Controls the Market?",
+  5: "Entries & Signals \u2014 When to Act",
+  6: "Legs & Bar Counting \u2014 H1, H2, L1, L2",
+  7: "Pullbacks \u2014 Pauses in Trends",
+  8: "Breakouts \u2014 Breaking Through Levels",
+  9: "Follow-Through \u2014 Was the Move Real?",
+  10: "Trends & Day Types \u2014 Classifying the Day",
+  11: "Trading Ranges \u2014 Sideways Markets",
+  12: "Inside & Outside Bars \u2014 Compression & Expansion",
+  13: "Channels \u2014 Trend Structure",
+  14: "Gaps & Globex \u2014 Overnight Moves",
+  15: "Climaxes \u2014 Exhaustion Signals",
+  16: "Reversals \u2014 When Trends Flip",
+  17: "Double Tops & Bottoms \u2014 Failed Tests",
+  18: "Wedges & Flags \u2014 3-Push Patterns",
+  19: "Chart Patterns \u2014 Classic Shapes",
+  20: "Traps \u2014 Catching Traders Off Guard",
+  21: "Probability & Risk \u2014 The Traders Equation",
+  22: "Order Types \u2014 How to Execute",
+  23: "Moving Averages \u2014 The EMA & Beyond",
+  24: "Time & Session \u2014 When Things Happen",
+  25: "Time Frames \u2014 Chart Intervals",
+  26: "Ticks & Tick Traps \u2014 Scalping Details",
+  27: "Opening Range \u2014 The First 18 Bars",
+  28: "Measured Moves & Magnets \u2014 Price Targets",
+  29: "Bull Patterns \u2014 Buyer Signals",
+  30: "Bear Patterns \u2014 Seller Signals",
+  31: "Buying & Selling Context \u2014 Who\u2019s Likely Where",
+  32: "Moving Average Details \u2014 Institutional MAs",
+  33: "End of Day & Closes \u2014 Final Hour",
+};
+
+const COLOR_PALETTE = [
+  { bg: "#1a2744", border: "#3b82f6", glow: "rgba(59,130,246,0.3)", text: "#93bbfc" },
+  { bg: "#1a3328", border: "#22c55e", glow: "rgba(34,197,94,0.3)", text: "#86efac" },
+  { bg: "#2d1f3d", border: "#a855f7", glow: "rgba(168,85,247,0.3)", text: "#d8b4fe" },
+  { bg: "#3b2314", border: "#f97316", glow: "rgba(249,115,22,0.3)", text: "#fdba74" },
+  { bg: "#3b1420", border: "#ef4444", glow: "rgba(239,68,68,0.3)", text: "#fca5a5" },
+  { bg: "#1a2d3b", border: "#06b6d4", glow: "rgba(6,182,212,0.3)", text: "#67e8f9" },
+  { bg: "#2d2d14", border: "#eab308", glow: "rgba(234,179,8,0.3)", text: "#fde047" },
+  { bg: "#2d1428", border: "#ec4899", glow: "rgba(236,72,153,0.3)", text: "#f9a8d4" },
+];
+
+function getColor(i) { return COLOR_PALETTE[i % COLOR_PALETTE.length]; }
+
+const LEVEL_CONFIG = {
+  1: { label: "Learn", description: "Full meaning shown", showMeaning: true, timed: false },
+  2: { label: "Recall", description: "Abbreviation only", showMeaning: false, timed: false },
+  3: { label: "Speed", description: "Abbreviation + timer", showMeaning: false, timed: true },
+};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getAllTerms() {
+  const all = [];
+  Object.entries(GROUPS).forEach(function(pair) {
+    var gId = pair[0], g = pair[1];
+    g.terms.forEach(function(t) { all.push(Object.assign({}, t, { groupId: Number(gId), groupName: g.name })); });
+  });
+  return all;
+}
+
+// ============================================================
+// STORAGE (localStorage for PWA)
+// ============================================================
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem('brooks-progress') || '{}'); } catch(e) { return {}; }
+}
+function saveProgressToStorage(p) {
+  try { localStorage.setItem('brooks-progress', JSON.stringify(p)); } catch(e) {}
+}
+
+// ============================================================
+// REACT APP
+// ============================================================
+const e = React.createElement;
+const { useState, useCallback, useRef, useEffect, useMemo } = React;
+
+function TermCard(props) {
+  var term = props.term, level = props.level, colorMap = props.colorMap, onDragStart = props.onDragStart, isDragging = props.isDragging, result = props.result;
+  var config = LEVEL_CONFIG[level];
+  var colors = colorMap[term.category] || COLOR_PALETTE[0];
+  var bg = "rgba(255,255,255,0.04)", bc = "rgba(255,255,255,0.1)", op = isDragging ? 0.4 : 1, tf = "";
+  if (result === "correct") { bg = "rgba(34,197,94,0.15)"; bc = "#22c55e"; op = 0.5; tf = "scale(0.95)"; }
+  if (result === "wrong") { bg = "rgba(239,68,68,0.15)"; bc = "#ef4444"; }
+
+  return e("div", {
+    draggable: !result,
+    onDragStart: function(ev) { ev.dataTransfer.setData("text/plain", term.abbr); onDragStart(term.abbr); },
+    style: { padding: "10px 14px", background: bg, border: "1.5px solid " + bc, borderRadius: 10,
+      cursor: result ? "default" : "grab", opacity: op, transition: "all 0.3s ease",
+      userSelect: "none", transform: tf }
+  },
+    e("div", { style: { fontSize: 18, fontWeight: 700, color: "#f1f5f9", fontFamily: "'JetBrains Mono', monospace" } }, term.abbr),
+    config.showMeaning ? e("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 3, lineHeight: 1.3 } }, term.meaning) : null,
+    result === "wrong" ? e("div", { style: { fontSize: 10, color: "#fca5a5", marginTop: 4 } },
+      "\u2192 ", e("span", { style: { color: colors.text, fontWeight: 600 } }, term.category)) : null
+  );
+}
+
+function Bucket(props) {
+  var name = props.name, isOver = props.isOver, onDrop = props.onDrop, onDragOver = props.onDragOver, onDragLeave = props.onDragLeave, ok = props.ok, total = props.total, colors = props.colors;
+  return e("div", {
+    onDragOver: function(ev) { ev.preventDefault(); onDragOver(name); },
+    onDragLeave: onDragLeave,
+    onDrop: function(ev) { ev.preventDefault(); onDrop(name); },
+    style: { flex: "1 1 0", minWidth: 100, padding: "12px 8px",
+      background: isOver ? colors.bg : "rgba(255,255,255,0.02)",
+      border: "2px " + (isOver ? "solid" : "dashed") + " " + (isOver ? colors.border : "rgba(255,255,255,0.08)"),
+      borderRadius: 12, textAlign: "center", transition: "all 0.25s ease",
+      boxShadow: isOver ? "0 0 20px " + colors.glow : "none", position: "relative" }
+  },
+    e("div", { style: { fontSize: 10, fontWeight: 700, color: isOver ? colors.text : "rgba(255,255,255,0.4)",
+      textTransform: "uppercase", letterSpacing: 0.8, transition: "color 0.25s" } }, name),
+    e("div", { style: { fontSize: 10, color: "rgba(255,255,255,0.2)", marginTop: 4 } }, ok + "/" + total),
+    isOver ? e("div", { style: { position: "absolute", inset: 0, borderRadius: 10,
+      background: "radial-gradient(ellipse at center, " + colors.glow + ", transparent 70%)", pointerEvents: "none" } }) : null
+  );
+}
+
+function SearchScreen(props) {
+  var q = useState(""), query = q[0], setQuery = q[1];
+  var allTerms = useMemo(getAllTerms, []);
+  var filtered = useMemo(function() {
+    if (!query.trim()) return [];
+    var lq = query.toLowerCase();
+    return allTerms.filter(function(t) {
+      return t.abbr.toLowerCase().indexOf(lq) >= 0 || t.meaning.toLowerCase().indexOf(lq) >= 0 || t.category.toLowerCase().indexOf(lq) >= 0;
+    }).slice(0, 50);
+  }, [query, allTerms]);
+
+  return e("div", { style: { minHeight: "100vh", background: "#0a0e1a", color: "#f1f5f9", fontFamily: "'Segoe UI', system-ui, sans-serif", padding: 20 } },
+    e("div", { style: { maxWidth: 520, margin: "0 auto" } },
+      e("div", { style: { display: "flex", alignItems: "center", gap: 12, marginBottom: 20 } },
+        e("button", { onClick: props.onBack, style: { background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 13 } }, "\u2190 Back"),
+        e("div", { style: { fontSize: 16, fontWeight: 700 } }, "Search All Terms"),
+        e("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.25)" } }, allTerms.length + " total")
+      ),
+      e("input", { value: query, onChange: function(ev) { setQuery(ev.target.value); }, placeholder: "Type abbreviation or keyword...", autoFocus: true,
+        style: { width: "100%", padding: "12px 16px", background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#f1f5f9",
+          fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 16 } }),
+      query.trim() && filtered.length === 0 ? e("div", { style: { color: "rgba(255,255,255,0.3)", fontSize: 13, textAlign: "center", padding: 20 } }, "No matches found") : null,
+      !query.trim() ? e("div", { style: { color: "rgba(255,255,255,0.25)", fontSize: 12, textAlign: "center", padding: 20 } }, "Start typing to search " + allTerms.length + " abbreviations") : null,
+      e("div", { style: { display: "flex", flexDirection: "column", gap: 6 } },
+        filtered.map(function(t) {
+          return e("div", { key: t.abbr + t.groupId, style: { padding: "10px 14px", background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.06)", borderRadius: 8 } },
+            e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" } },
+              e("div", null,
+                e("span", { style: { fontSize: 16, fontWeight: 700, color: "#f1f5f9", fontFamily: "'JetBrains Mono', monospace" } }, t.abbr),
+                e("span", { style: { fontSize: 10, color: "rgba(255,255,255,0.2)", marginLeft: 8 } }, "G" + t.groupId)),
+              e("span", { style: { fontSize: 9, padding: "2px 6px", borderRadius: 4, background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.35)" } }, t.category)),
+            e("div", { style: { fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 4, lineHeight: 1.4 } }, t.meaning));
+        }))
+    )
+  );
+}
+
+function App() {
+  var s1 = useState("menu"); var screen = s1[0]; var setScreen = s1[1];
+  var s2 = useState(1); var sg = s2[0]; var setSg = s2[1];
+  var s3 = useState(1); var level = s3[0]; var setLevel = s3[1];
+  var s4 = useState([]); var terms = s4[0]; var setTerms = s4[1];
+  var s5 = useState({}); var results = s5[0]; var setResults = s5[1];
+  var s6 = useState(null); var dragging = s6[0]; var setDragging = s6[1];
+  var s7 = useState(null); var hov = s7[0]; var setHov = s7[1];
+  var s8 = useState(0); var score = s8[0]; var setScore = s8[1];
+  var s9 = useState(0); var streak = s9[0]; var setStreak = s9[1];
+  var sA = useState(0); var best = sA[0]; var setBest = sA[1];
+  var sB = useState([]); var wrong = sB[0]; var setWrong = sB[1];
+  var sC = useState(0); var timer = sC[0]; var setTimer = sC[1];
+  var sD = useState(false); var timerOn = sD[0]; var setTimerOn = sD[1];
+  var sE = useState(null); var mobSel = sE[0]; var setMobSel = sE[1];
+  var sF = useState(false); var isRandom = sF[0]; var setIsRandom = sF[1];
+  var sG = useState([]); var randomCats = sG[0]; var setRandomCats = sG[1];
+  var sH = useState([]); var randomTerms = sH[0]; var setRandomTerms = sH[1];
+  var sI = useState(loadProgress); var progress = sI[0]; var setProgress = sI[1];
+  var tRef = useRef(null);
+
+  var saveProg = useCallback(function(p) { setProgress(p); saveProgressToStorage(p); }, []);
+
+  var group = isRandom ? { name: "Random Mix", categories: randomCats, terms: randomTerms } : GROUPS[sg];
+  var cats = group.categories;
+  var cMap = {};
+  cats.forEach(function(c, i) { cMap[c] = getColor(i); });
+  var cntCat = function(c) { return group.terms.filter(function(t) { return t.category === c; }).length; };
+  var okCat = function(c) { return group.terms.filter(function(t) { return t.category === c && results[t.abbr] === "correct"; }).length; };
+  var totalG = Object.keys(GROUPS).length;
+  var totalT = Object.values(GROUPS).reduce(function(s, g) { return s + g.terms.length; }, 0);
+
+  var startRandom = function(lvl) {
+    var gIds = shuffle(Object.keys(GROUPS).map(Number)).slice(0, 4);
+    var picked = [], catSet = [];
+    gIds.forEach(function(gId) {
+      var g = GROUPS[gId]; catSet.push(g.name);
+      shuffle(g.terms).slice(0, 4).forEach(function(t) { picked.push(Object.assign({}, t, { category: g.name })); });
+    });
+    setRandomCats(catSet); setRandomTerms(picked); setIsRandom(true); setLevel(lvl);
+    setTerms(shuffle(picked)); setResults({}); setScore(0); setStreak(0); setBest(0);
+    setWrong([]); setTimer(0); setMobSel(null); setScreen("play");
+    if (LEVEL_CONFIG[lvl].timed) setTimerOn(true);
+  };
+
+  var start = function(lvl) {
+    setIsRandom(false); setLevel(lvl); setTerms(shuffle(GROUPS[sg].terms)); setResults({});
+    setScore(0); setStreak(0); setBest(0); setWrong([]); setTimer(0); setMobSel(null); setScreen("play");
+    if (LEVEL_CONFIG[lvl].timed) setTimerOn(true);
+  };
+
+  useEffect(function() {
+    if (timerOn) { tRef.current = setInterval(function() { setTimer(function(t) { return t + 1; }); }, 1000); }
+    return function() { clearInterval(tRef.current); };
+  }, [timerOn]);
+
+  var proc = useCallback(function(abbr, cat) {
+    var t = group.terms.find(function(x) { return x.abbr === abbr; });
+    if (!t) return;
+    var ok = t.category === cat;
+    setResults(function(p) {
+      var n = Object.assign({}, p); n[t.abbr] = ok ? "correct" : "wrong";
+      if (Object.keys(n).length === group.terms.length) {
+        setTimerOn(false); clearInterval(tRef.current);
+        if (!isRandom) {
+          var pct = Math.round((Object.values(n).filter(function(v){return v==="correct";}).length / group.terms.length) * 100);
+          var prev = progress[sg] || 0;
+          if (pct > prev) saveProg(Object.assign({}, progress, (function(){var o={};o[sg]=pct;return o;})()));
+        }
+        setTimeout(function() { setScreen("results"); }, 800);
+      }
+      return n;
+    });
+    if (ok) { setScore(function(s) { return s + (level === 3 ? 15 : level === 2 ? 10 : 5); });
+      setStreak(function(s) { var ns = s + 1; setBest(function(b) { return Math.max(b, ns); }); return ns; });
+    } else { setStreak(0); setWrong(function(p) { return p.concat([t.abbr]); }); }
+  }, [group.terms, level, isRandom, sg, progress, saveProg]);
+
+  var drop = useCallback(function(c) { if (!dragging) return; proc(dragging, c); setDragging(null); setHov(null); }, [dragging, proc]);
+  var mobTap = function(a) { if (results[a]) return; setMobSel(mobSel === a ? null : a); };
+  var bucTap = function(c) { if (mobSel) { proc(mobSel, c); setMobSel(null); } };
+  var totOk = Object.values(results).filter(function(r) { return r === "correct"; }).length;
+  var totBad = Object.values(results).filter(function(r) { return r === "wrong"; }).length;
+
+  // ===== SEARCH =====
+  if (screen === "search") return e(SearchScreen, { onBack: function() { setScreen("menu"); } });
+
+  // ===== MENU =====
+  if (screen === "menu") {
+    var mastered = Object.keys(progress).filter(function(k) { return progress[k] >= 80; }).length;
+    return e("div", { style: { minHeight: "100vh", background: "#0a0e1a", color: "#f1f5f9", fontFamily: "'Segoe UI', system-ui, sans-serif", padding: 20 } },
+      e("div", { style: { maxWidth: 540, margin: "0 auto" } },
+        // Header
+        e("div", { style: { textAlign: "center", marginBottom: 16 } },
+          e("div", { style: { fontSize: 10, textTransform: "uppercase", letterSpacing: 3, color: "rgba(255,255,255,0.3)", marginBottom: 6 } }, "Al Brooks Price Action"),
+          e("h1", { style: { fontSize: 28, fontWeight: 800, margin: "0 0 4px", background: "linear-gradient(135deg, #3b82f6, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" } }, "TERM SORT"),
+          e("p", { style: { color: "rgba(255,255,255,0.3)", fontSize: 11, margin: 0 } }, totalG + " groups \u00b7 " + totalT + " terms \u00b7 " + mastered + "/" + totalG + " mastered")),
+        // Top buttons
+        e("div", { style: { display: "flex", gap: 8, marginBottom: 18 } },
+          e("button", { onClick: function() { setScreen("search"); }, style: { flex: 1, padding: "10px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#f1f5f9", cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 } }, "\ud83d\udd0d Search All Terms"),
+          e("button", { onClick: function() { startRandom(1); }, style: { flex: 1, padding: "10px 14px", background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 10, color: "#d8b4fe", cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 } }, "\ud83c\udfb2 Random Mix")),
+        // Progress bar
+        e("div", { style: { marginBottom: 18 } },
+          e("div", { style: { display: "flex", justifyContent: "space-between", marginBottom: 4 } },
+            e("span", { style: { fontSize: 10, color: "rgba(255,255,255,0.3)" } }, "PROGRESS"),
+            e("span", { style: { fontSize: 10, color: "rgba(255,255,255,0.3)" } }, mastered + "/" + totalG + " mastered (\u226580%)")),
+          e("div", { style: { height: 4, background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" } },
+            e("div", { style: { height: "100%", width: (mastered / totalG * 100) + "%", background: "linear-gradient(90deg, #22c55e, #3b82f6)", borderRadius: 2, transition: "width 0.5s" } }))),
+        // Group list
+        e("div", { style: { display: "flex", flexDirection: "column", gap: 4, maxHeight: 320, overflowY: "auto", marginBottom: 16 } },
+          Object.entries(GROUPS).map(function(pair) {
+            var gId = Number(pair[0]), g = pair[1], active = sg === gId, pct = progress[gId] || 0, isMastered = pct >= 80;
+            var label = GROUP_LABELS[gId] || g.name;
+            return e("button", { key: gId, onClick: function() { setSg(gId); }, style: {
+              padding: "8px 12px", background: active ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.015)",
+              border: "1px solid " + (active ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.04)"),
+              borderRadius: 8, color: active ? "#f1f5f9" : "rgba(255,255,255,0.4)",
+              cursor: "pointer", fontSize: 11, textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" } },
+              e("div", { style: { display: "flex", alignItems: "center", gap: 8 } },
+                e("span", { style: { fontSize: 10, color: "rgba(255,255,255,0.2)", minWidth: 24 } }, "G" + gId),
+                e("span", { style: { fontWeight: active ? 600 : 400 } }, label)),
+              e("div", { style: { display: "flex", alignItems: "center", gap: 6 } },
+                e("span", { style: { fontSize: 9, color: "rgba(255,255,255,0.2)" } }, g.terms.length + "t"),
+                isMastered ? e("span", { style: { fontSize: 11 } }, "\u2705") : null,
+                !isMastered && pct > 0 ? e("span", { style: { fontSize: 9, color: "#f97316" } }, pct + "%") : null));
+          })),
+        // Selected group
+        e("div", { style: { padding: 14, background: "rgba(255,255,255,0.02)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.05)" } },
+          e("div", { style: { fontSize: 13, fontWeight: 700, marginBottom: 2 } }, GROUP_LABELS[sg] || GROUPS[sg].name),
+          e("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.3)", marginBottom: 10 } }, GROUPS[sg].terms.length + " terms"),
+          e("div", { style: { display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 } },
+            GROUPS[sg].categories.map(function(c, i) {
+              return e("span", { key: c, style: { fontSize: 9, padding: "2px 7px", borderRadius: 5, background: getColor(i).bg, color: getColor(i).text, border: "1px solid " + getColor(i).border + "33" } }, c);
+            })),
+          e("div", { style: { display: "flex", gap: 6 } },
+            [1, 2, 3].map(function(lvl) {
+              return e("button", { key: lvl, onClick: function() { start(lvl); }, style: {
+                flex: 1, padding: "10px 8px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: 8, color: "#f1f5f9", cursor: "pointer", fontSize: 11, fontWeight: 600 } },
+                (lvl === 1 ? "\ud83d\udcd6" : lvl === 2 ? "\ud83e\udde0" : "\u26a1") + " " + LEVEL_CONFIG[lvl].label);
+            })))
+      )
+    );
+  }
+
+  // ===== RESULTS =====
+  if (screen === "results") {
+    var pct = Math.round((totOk / group.terms.length) * 100);
+    var grade = pct === 100 ? "PERFECT" : pct >= 80 ? "GREAT" : pct >= 60 ? "GOOD" : "KEEP GOING";
+    var gc = pct === 100 ? "#22c55e" : pct >= 80 ? "#3b82f6" : pct >= 60 ? "#f97316" : "#ef4444";
+    return e("div", { style: { minHeight: "100vh", background: "#0a0e1a", color: "#f1f5f9", fontFamily: "'Segoe UI', system-ui, sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 } },
+      e("div", { style: { textAlign: "center", maxWidth: 400 } },
+        e("div", { style: { fontSize: 42, fontWeight: 900, color: gc, marginBottom: 4 } }, grade),
+        e("div", { style: { fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 4 } }, isRandom ? "Random Mix" : "G" + sg + ": " + (GROUP_LABELS[sg] || group.name)),
+        e("div", { style: { fontSize: 11, color: "rgba(255,255,255,0.25)", marginBottom: 20 } }, "Level " + level + ": " + LEVEL_CONFIG[level].label + " \u00b7 " + pct + "% correct"),
+        e("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 } },
+          [{v: totOk, l: "Correct", c: "#22c55e"}, {v: totBad, l: "Wrong", c: "#ef4444"}, {v: best, l: "Streak", c: "#f97316"}].map(function(s) {
+            return e("div", { key: s.l, style: { background: "rgba(255,255,255,0.03)", padding: 12, borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" } },
+              e("div", { style: { fontSize: 22, fontWeight: 800, color: s.c } }, s.v),
+              e("div", { style: { fontSize: 10, color: "rgba(255,255,255,0.3)" } }, s.l));
+          })),
+        LEVEL_CONFIG[level].timed ? e("div", { style: { fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 14 } }, "Time: " + timer + "s") : null,
+        wrong.length > 0 ? e("div", { style: { marginBottom: 18, padding: 12, background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 10, textAlign: "left", maxHeight: 180, overflowY: "auto" } },
+          e("div", { style: { fontSize: 10, color: "#fca5a5", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 } }, "Review"),
+          wrong.map(function(a, i) {
+            var t = group.terms.find(function(x) { return x.abbr === a; });
+            var cl = cMap[t.category] || COLOR_PALETTE[0];
+            return e("div", { key: a + i, style: { fontSize: 11, color: "rgba(255,255,255,0.6)", marginBottom: 3 } },
+              e("span", { style: { fontWeight: 700, color: "#f1f5f9", fontFamily: "monospace" } }, t.abbr), " \u2192 ",
+              e("span", { style: { color: cl.text } }, t.category),
+              e("span", { style: { color: "rgba(255,255,255,0.25)" } }, " \u00b7 " + t.meaning));
+          })) : null,
+        e("div", { style: { display: "flex", gap: 8, flexWrap: "wrap" } },
+          isRandom ? e("button", { onClick: function() { startRandom(level); }, style: { flex: 1, padding: 10, background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 10, color: "#d8b4fe", fontSize: 13, fontWeight: 600, cursor: "pointer" } }, "New Random")
+            : e("button", { onClick: function() { start(level); }, style: { flex: 1, padding: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#f1f5f9", fontSize: 13, fontWeight: 600, cursor: "pointer" } }, "Retry"),
+          !isRandom && sg < totalG ? e("button", { onClick: function() { setSg(function(s){return s+1;}); setScreen("menu"); }, style: { flex: 1, padding: 10, background: "rgba(59,130,246,0.15)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 10, color: "#93bbfc", fontSize: 13, fontWeight: 600, cursor: "pointer" } }, "Next Group") : null,
+          e("button", { onClick: function() { setScreen("menu"); }, style: { flex: 1, padding: 10, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, color: "rgba(255,255,255,0.5)", fontSize: 13, fontWeight: 600, cursor: "pointer" } }, "Menu"))
+      )
+    );
+  }
+
+  // ===== PLAY =====
+  return e("div", { style: { minHeight: "100vh", background: "#0a0e1a", color: "#f1f5f9", fontFamily: "'Segoe UI', system-ui, sans-serif", padding: "14px 14px 100px" } },
+    // Top bar
+    e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 } },
+      e("button", { onClick: function() { setTimerOn(false); clearInterval(tRef.current); setScreen("menu"); }, style: { background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", fontSize: 12 } }, "\u2190 Back"),
+      e("div", { style: { fontSize: 10, color: "rgba(255,255,255,0.25)" } }, isRandom ? "Random Mix" : "G" + sg + ": " + group.name),
+      e("div", { style: { display: "flex", gap: 12, fontSize: 12 } },
+        e("span", { style: { color: "rgba(255,255,255,0.3)" } }, "Score: ", e("span", { style: { color: "#f1f5f9", fontWeight: 700 } }, score)),
+        streak > 1 ? e("span", { style: { color: "#f97316" } }, streak + " \ud83d\udd25") : null,
+        LEVEL_CONFIG[level].timed ? e("span", { style: { color: "rgba(255,255,255,0.3)" } }, timer + "s") : null)),
+    // Progress bar
+    e("div", { style: { height: 3, background: "rgba(255,255,255,0.05)", borderRadius: 2, marginBottom: 14, overflow: "hidden" } },
+      e("div", { style: { height: "100%", width: (Object.keys(results).length / group.terms.length * 100) + "%", background: "linear-gradient(90deg, #3b82f6, #a855f7)", borderRadius: 2, transition: "width 0.4s ease" } })),
+    // Buckets
+    e("div", { style: { display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" } },
+      cats.map(function(c, i) {
+        return e(Bucket, { key: c, name: c, isOver: hov === c, onDrop: drop, onDragOver: function(n) { setHov(n); }, onDragLeave: function() { setHov(null); }, ok: okCat(c), total: cntCat(c), colors: getColor(i) });
+      })),
+    // Mobile selection
+    mobSel ? e("div", null,
+      e("div", { style: { textAlign: "center", fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 8 } }, "Sort ", e("span", { style: { color: "#f1f5f9", fontWeight: 700 } }, mobSel), " into:"),
+      e("div", { style: { display: "flex", gap: 5, marginBottom: 14, flexWrap: "wrap" } },
+        cats.map(function(c, i) {
+          return e("button", { key: c, onClick: function() { bucTap(c); }, style: { flex: "1 1 0", minWidth: 70, padding: "9px 5px", background: getColor(i).bg, border: "1.5px solid " + getColor(i).border, borderRadius: 8, color: getColor(i).text, fontSize: 9, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" } }, "\u2192 " + c);
+        }))) : null,
+    // Term cards
+    e("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 8 } },
+      terms.map(function(t) {
+        return e("div", { key: t.abbr, onClick: function() { mobTap(t.abbr); }, style: { outline: mobSel === t.abbr ? "2px solid #3b82f6" : "none", outlineOffset: -1, borderRadius: 10 } },
+          e(TermCard, { term: t, level: level, colorMap: cMap, onDragStart: setDragging, isDragging: dragging === t.abbr, result: results[t.abbr] }));
+      }))
+  );
+}
+
+ReactDOM.render(e(App), document.getElementById("root"));
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
