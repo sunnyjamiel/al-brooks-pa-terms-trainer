@@ -1,7 +1,7 @@
 {
-  "name": "Al Brooks Price Action Terminologies Trainer — Master 600+ Trading Abbreviations",
-  "short_name": "Al Brooks Terminologies",
-  "description": "Master Al Brooks' 600+ price action trading terminologies through interactive category sorting with spaced repetition",
+  "name": "Al Brooks PA Terms Quiz — Master 600+ Trading Abbreviations",
+  "short_name": "Al Brooks Quiz",
+  "description": "Master Al Brooks' 600+ price action trading terminologies and abbreviations through interactive category sorting",
   "start_url": "/al-brooks-pa-terms-trainer/",
   "display": "standalone",
   "background_color": "#0a0e1a",
